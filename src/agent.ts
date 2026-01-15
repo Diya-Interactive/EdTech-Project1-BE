@@ -119,9 +119,8 @@ class DefaultAgent extends voice.Agent {
 
     // Get clientName from metadata
     const clientName = templater.render('{{metadata.clientName}}');
-    const userName = clientName && clientName !== '{{metadata.clientName}}'
-      ? clientName
-      : 'Student';
+    const userName =
+      clientName && clientName !== '{{metadata.clientName}}' ? clientName : 'Student';
     const agentName = headersTemplater.render('{{secrets.AGENT_NAME}}') || 'StudyBuddy';
 
     super({
@@ -578,7 +577,7 @@ export default defineAgent({
 
     if (remoteParticipants.length > 0) {
       const participant = remoteParticipants[0];
-      if (participant.metadata) {
+      if (participant?.metadata) {
         participantMetadata = participant.metadata;
         console.log('Got metadata from existing participant:', participantMetadata);
       }
@@ -587,9 +586,10 @@ export default defineAgent({
     const agentInstance = new DefaultAgent(participantMetadata, ctx.room);
 
     // Also listen for new participants joining
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ctx.room.on('participantConnected', (participant: any) => {
-      console.log('Participant connected:', participant.identity);
-      if (participant.metadata) {
+      console.log('Participant connected:', participant?.identity);
+      if (participant?.metadata) {
         try {
           const metadata = JSON.parse(participant.metadata);
           if (metadata.clientName) {
@@ -676,24 +676,26 @@ export default defineAgent({
 
     if (updatedParticipants.length > 0) {
       const participant = updatedParticipants[0];
-      console.log('Participant identity:', participant.identity);
-      console.log('Participant metadata:', participant.metadata);
+      if (participant) {
+        console.log('Participant identity:', participant.identity);
+        console.log('Participant metadata:', participant.metadata);
 
-      if (participant.metadata) {
-        try {
-          const metadata = JSON.parse(participant.metadata);
-          console.log('Parsed metadata:', metadata);
-          if (metadata.clientName) {
-            agentInstance.userName = metadata.clientName;
-            console.log('Updated userName from participant after connect:', metadata.clientName);
-          } else {
-            console.log('No clientName in metadata');
+        if (participant.metadata) {
+          try {
+            const metadata = JSON.parse(participant.metadata);
+            console.log('Parsed metadata:', metadata);
+            if (metadata.clientName) {
+              agentInstance.userName = metadata.clientName;
+              console.log('Updated userName from participant after connect:', metadata.clientName);
+            } else {
+              console.log('No clientName in metadata');
+            }
+          } catch (error) {
+            console.error('Failed to parse participant metadata:', error);
           }
-        } catch (error) {
-          console.error('Failed to parse participant metadata:', error);
+        } else {
+          console.log('No metadata on participant');
         }
-      } else {
-        console.log('No metadata on participant');
       }
     } else {
       console.log('No remote participants found after delay');
